@@ -75,6 +75,11 @@ io.on("connection", (socket) => {
                 socket.emit("code-result", output);
                 if (hosts[socket.id]) {
                     io.to(roomID).emit("terminal-update", { code: output });
+                } else if (users[socket.id]) {
+                    socket.to(roomID).emit("student-code-result", {
+                        userName: users[socket.id].userName || "Student",
+                        output
+                    });
                 }
                 fs.unlink(filePath, () => {});
                 if (outputPath && fs.existsSync(outputPath)) fs.unlink(outputPath, () => {});
@@ -138,7 +143,7 @@ setInterval(() => {
     for (let socketId in users) {
         const lastActive = userActivity[socketId] || now;
         const diff = (now - lastActive) / 1000;
-        let status = diff > 600 ? "red" : (diff > 300 ? "yellow" : "green");
+        let status = diff > 300 ? "red" : (diff > 180 ? "yellow" : "green");
         io.to(users[socketId].roomID).emit("user-status", { socketId, status });
     }
 }, 5000);

@@ -11,6 +11,8 @@ const hostTerminal = document.getElementById("HostTerminal");
 const userMsg = document.getElementById("userMsg");
 const chatBox = document.getElementById("chatBox");
 const studentList = document.getElementById("studentList");
+const copyToast = document.getElementById("copyToast");
+let copyToastTimer;
 
 displayRoomID.innerText = roomID;
 
@@ -127,6 +129,16 @@ function stopTimer() {
 
 function copyRoomID() {
   navigator.clipboard.writeText(roomID);
+  showCopyToast();
+}
+
+function showCopyToast() {
+  if (!copyToast) return;
+  clearTimeout(copyToastTimer);
+  copyToast.classList.add("show");
+  copyToastTimer = setTimeout(() => {
+    copyToast.classList.remove("show");
+  }, 1800);
 }
 
 socket.on("student-joined", ({ socketId, userName }) => {
@@ -163,6 +175,11 @@ socket.on("code-result", (output) => {
 
   hostTerminal.value += `\n> ${output}\n`;
 
+  hostTerminal.scrollTop = hostTerminal.scrollHeight;
+});
+
+socket.on("student-code-result", ({ userName, output }) => {
+  hostTerminal.value += `\n${userName || "Student"} > ${output}\n`;
   hostTerminal.scrollTop = hostTerminal.scrollHeight;
 });
 

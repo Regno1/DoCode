@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.emit("user-activity");
   };
 
-  ["keydown", "mousemove", "click", "input"].forEach((eventName) => {
+  ["keydown", "input"].forEach((eventName) => {
     document.addEventListener(eventName, sendActivity);
   });
   sendActivity();
