@@ -10,6 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const users = {};
+const hosts = {};
 const activeRooms = new Set();
 const userActivity = {};
 const roomCode = {}; 
@@ -21,6 +22,7 @@ io.on("connection", (socket) => {
         if (role === "host") {
             activeRooms.add(roomID);
             socket.join(roomID);
+            hosts[socket.id] = { roomID };
             return;
         }
         if (role === "student") {
@@ -33,21 +35,36 @@ io.on("connection", (socket) => {
             if (roomCode[roomID]) {
                 socket.emit("code-update", { code: roomCode[roomID] });
             }
+            userActivity[socket.id] = Date.now();
             socket.to(roomID).emit("student-joined", { socketId: socket.id, userName });
         }
     });
 
     socket.on("run-code", ({ roomID, code, language }) => {
         let command = "";
-        let filename = `temp_${socket.id}`; 
+        const safeSocketId = socket.id.replace(/[^a-zA-Z0-9_-]/g, "");
+        let filename = `temp_${safeSocketId}`;
+        let outputFile = "";
+        const binaryExtension = process.platform === "win32" ? ".exe" : ".out";
         switch (language) {
-            case "JavaScript": filename += ".js"; command = `node ${filename}`; break;
+            case "JavaScript": filename += ".js"; command = `node "${filename}"`; break;
             case "Python": filename += ".py"; command = `python "${filename}"`; break;
-            case "C": filename += ".c"; command = `gcc ${filename} -o ${filename}.out && ./${filename}.out`; break;
-            case "C++": filename += ".cpp"; command = `g++ ${filename} -o ${filename}.out && ./${filename}.out`; break;
+            case "C":
+                filename += ".c";
+                outputFile = `${filename}${binaryExtension}`;
+                command = `gcc "${filename}" -o "${outputFile}" && "${process.platform === "win32" ? outputFile : `./${outputFile}`}"`;
+                break;
+            case "C++":
+                filename += ".cpp";
+                outputFile = `${filename}${binaryExtension}`;
+                command = `g++ "${filename}" -o "${outputFile}" && "${process.platform === "win32" ? outputFile : `./${outputFile}`}"`;
+                break;
             default: socket.emit("code-result", "Language not supported."); return;
         }
-        fs.writeFile(filename, code, (err) => {
+        const filePath = path.join(__dirname, filename);
+        const outputPath = outputFile ? path.join(__dirname, outputFile) : "";
+
+        fs.writeFile(filePath, code, (err) => {
             if (err) return socket.emit("code-result", "Error: File creation failed.");
             exec(command, {
                  timeout: 5000,
@@ -56,9 +73,11 @@ io.on("connection", (socket) => {
              }, (error, stdout, stderr) => {
                 let output = error ? stderr || error.message : stdout || "Success (No output).";
                 socket.emit("code-result", output);
-                io.to(roomID).emit("terminal-update", { code: output });
-                fs.unlink(filename, () => {});
-                if (fs.existsSync(`${filename}.out`)) fs.unlink(`${filename}.out`, () => {});
+                if (hosts[socket.id]) {
+                    io.to(roomID).emit("terminal-update", { code: output });
+                }
+                fs.unlink(filePath, () => {});
+                if (outputPath && fs.existsSync(outputPath)) fs.unlink(outputPath, () => {});
             });
         });
     });
@@ -84,11 +103,23 @@ io.on("connection", (socket) => {
         socket.to(roomID).emit("timer-stopped");
     });
 
+    socket.on("stop-timer", ({ roomID }) => {
+        socket.to(roomID).emit("timer-stopped");
+    });
+
     socket.on("language-change", ({ roomID, lang }) => {
         socket.to(roomID).emit("language-updated", lang);
     });
 
     socket.on("disconnect", () => {
+        const host = hosts[socket.id];
+        if (host) {
+            activeRooms.delete(host.roomID);
+            delete roomCode[host.roomID];
+            socket.to(host.roomID).emit("room-closed");
+            delete hosts[socket.id];
+        }
+
         const user = users[socket.id];
         if (user) {
             socket.to(user.roomID).emit("student-left", { socketId: socket.id });

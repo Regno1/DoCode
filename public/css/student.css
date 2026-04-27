@@ -73,7 +73,7 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: 14px 14px 0 0;
+    border-radius: 20px;
     font-weight: 600;
 }
 

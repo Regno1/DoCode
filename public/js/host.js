@@ -48,12 +48,15 @@ userMsg.addEventListener("keypress", (e) => {
 
 
 socket.on("receive-message", (data) => {
-  appendMessage(`<b>${data.sender}:</b> ${data.message}`);
+  appendMessage(data.sender, data.message);
 });
 
-function appendMessage(msg) {
+function appendMessage(sender, message) {
   const div = document.createElement("div");
-  div.innerHTML = msg;
+  const name = document.createElement("b");
+  name.textContent = `${sender}: `;
+  div.appendChild(name);
+  div.append(document.createTextNode(message));
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -118,7 +121,8 @@ function startTimer() {
 
 function stopTimer() {
   clearInterval(timerInterval);
-  socket.emit("stop-timer", { roomID });
+  document.getElementById("timerDisplay").innerText = "00:00";
+  socket.emit("timer-stopped", { roomID });
 }
 
 function copyRoomID() {
@@ -132,7 +136,10 @@ socket.on("student-joined", ({ socketId, userName }) => {
   const div = document.createElement("div");
   div.className = "student-item";
   div.id = socketId;
-  div.innerHTML = `${userName} <span class="online-dot"></span>`;
+  div.append(document.createTextNode(userName || "Student"));
+  const dot = document.createElement("span");
+  dot.className = "online-dot";
+  div.appendChild(dot);
 
   document.getElementById("studentList").appendChild(div);
 });
@@ -153,7 +160,10 @@ document.querySelector(".run button").addEventListener("click", () => {
 });
 
 socket.on("code-result", (output) => {
-  hostTerminal.value = output;
+
+  hostTerminal.value += `\n> ${output}\n`;
+
+  hostTerminal.scrollTop = hostTerminal.scrollHeight;
 });
 
 socket.on("user-status", ({ socketId, status }) => {
@@ -164,17 +174,12 @@ socket.on("user-status", ({ socketId, status }) => {
   const dot = student.querySelector(".online-dot");
 
   if (dot) {
-   if (status === "green") {
-  dot.style.background = "#1aff6e";
-}
-
-if (status === "yellow") {
-  dot.style.background = "#facc15";
-}
-
-if (status === "red") {
-  dot.style.background = "#ff0a0a";
-}
+    const colors = {
+      green: "#1aff6e",
+      yellow: "#facc15",
+      red: "#ff0a0a"
+    };
+    dot.style.background = colors[status] || colors.red;
   }
 });
 

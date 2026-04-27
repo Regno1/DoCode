@@ -1,22 +1,36 @@
-🚀 DoCode
-A Real-Time Practical Coding Classroom
+# DoCode
 
-📌 Overview
-DoCode is a real-time web-based coding classroom where teachers host live coding sessions and students practice simultaneously. It transforms passive learning into hands-on programming through synchronized code sharing.
+A real-time practical coding classroom for live teaching and student practice.
 
-✨ Features
-Live teacher coding
-Student join via class code
-Real-time code synchronization
-Step-by-step explanation
-Timer-based practice
+## Overview
 
-🛠️ Tech Stack
-HTML CSS JavaScript
-Node js Express js
-Socket IO
+DoCode is a web-based coding classroom where teachers host live coding sessions and students can join with a room code. Teacher code, terminal output, timer updates, and chat messages sync in real time.
 
-▶️ Run
+## Features
+
+- Live teacher coding
+- Student join via class code
+- Real-time code synchronization
+- Shared teacher terminal output
+- Student practice workspace
+- Live chat
+- Timer-based practice
+
+## Tech Stack
+
+- HTML
+- CSS
+- JavaScript
+- Node.js
+- Express
+- Socket.IO
+
+## Run
+
+```bash
 cd server
 npm install
 npm run dev
+```
+
+Open `http://localhost:3000` in your browser.

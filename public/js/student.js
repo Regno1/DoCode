@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const urlParams = new URLSearchParams(window.location.search);
   const roomID = urlParams.get("room");
-  const userName = urlParams.get("name");
+  const userName = urlParams.get("name") || "Student";
  
   if (!roomID) {
     window.location.href = "index.html";
@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const socket = io("http://localhost:3000");
+  let activeLanguage = "JavaScript";
 
   document.getElementById("currentRoom").innerText = roomID;
 
@@ -17,6 +18,16 @@ document.addEventListener("DOMContentLoaded", () => {
     roomID,
     role: "student",
     userName
+  });
+
+  socket.on("invalid-room", () => {
+    alert("Invalid room ID. Please check with your teacher.");
+    window.location.href = "index.html";
+  });
+
+  socket.on("room-closed", () => {
+    alert("This class has ended.");
+    window.location.href = "index.html";
   });
 
   socket.on("code-update", (data) => {
@@ -36,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   socket.on("language-updated", (lang) => {
+    activeLanguage = lang;
     document.getElementById("activeLang").innerText = lang;
   });
 
@@ -55,15 +67,45 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   socket.on("receive-message", (data) => {
-    appendMessage(`<b>${data.sender}:</b> ${data.message}`);
+    appendMessage(data.sender, data.message);
   });
 
-  function appendMessage(msg) {
+  function appendMessage(sender, message) {
     const div = document.createElement("div");
-    div.innerHTML = msg;
+    const name = document.createElement("b");
+    name.textContent = `${sender}: `;
+    div.appendChild(name);
+    div.append(document.createTextNode(message));
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
+
+  document.querySelector(".run button").addEventListener("click", () => {
+    socket.emit("run-code", {
+      roomID,
+      code: document.getElementById("StudentEditor").value,
+      language: activeLanguage
+    });
+  });
+
+  socket.on("code-result", (output) => {
+    const terminal = document.getElementById("StudentTerminal");
+    terminal.value += `\n> ${output}\n`;
+    terminal.scrollTop = terminal.scrollHeight;
+  });
+
+  let lastActivitySent = 0;
+  const sendActivity = () => {
+    const now = Date.now();
+    if (now - lastActivitySent < 5000) return;
+    lastActivitySent = now;
+    socket.emit("user-activity");
+  };
+
+  ["keydown", "mousemove", "click", "input"].forEach((eventName) => {
+    document.addEventListener(eventName, sendActivity);
+  });
+  sendActivity();
 
 });
 

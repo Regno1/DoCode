@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const userName = document.getElementById("userName").value.trim();
   const roomID = document.getElementById("roomID").value.trim();
 
+  if (!userName || !roomID) {
+    alert("Please enter your name and room ID.");
+    return;
+  }
+
   sessionStorage.setItem("userName",userName);
 
   window.location.href =
