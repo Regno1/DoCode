@@ -61,9 +61,18 @@ function appendMessage(msg) {
 
 
 document.getElementById("Language").addEventListener("change", (e) => {
+  const lang = e.target.value;
+
+  hostEditor.value = getBoilerplate(lang);
+
   socket.emit("language-change", {
     roomID,
-    lang: e.target.value
+    lang
+  });
+
+  socket.emit("code-update", {
+    roomID,
+    code: hostEditor.value
   });
 });
 
@@ -133,6 +142,40 @@ socket.on("student-left", ({ socketId }) => {
   if (el) el.remove();
 });
 
+document.querySelector(".run button").addEventListener("click", () => {
+  const language = document.getElementById("Language").value;
 
+  socket.emit("run-code", {
+    roomID,
+    code: hostEditor.value,
+    language
+  });
+});
+
+socket.on("code-result", (output) => {
+  hostTerminal.value = output;
+});
+
+socket.on("user-status", ({ socketId, status }) => {
+  const student = document.getElementById(socketId);
+
+  if (!student) return;
+
+  const dot = student.querySelector(".online-dot");
+
+  if (dot) {
+   if (status === "green") {
+  dot.style.background = "#1aff6e";
+}
+
+if (status === "yellow") {
+  dot.style.background = "#facc15";
+}
+
+if (status === "red") {
+  dot.style.background = "#ff0a0a";
+}
+  }
+});
 
 

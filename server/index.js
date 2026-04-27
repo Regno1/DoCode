@@ -49,7 +49,11 @@ io.on("connection", (socket) => {
         }
         fs.writeFile(filename, code, (err) => {
             if (err) return socket.emit("code-result", "Error: File creation failed.");
-            exec(command, { timeout: 5000 }, (error, stdout, stderr) => {
+            exec(command, {
+                 timeout: 5000,
+                 cwd: __dirname,
+                 maxBuffer: 1024 * 1024
+             }, (error, stdout, stderr) => {
                 let output = error ? stderr || error.message : stdout || "Success (No output).";
                 socket.emit("code-result", output);
                 io.to(roomID).emit("terminal-update", { code: output });

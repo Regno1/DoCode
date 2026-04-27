@@ -122,3 +122,12 @@ textarea {
     border-radius: 3px;
     
 }
+
+.online-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 8px;
+    background: rgb(24, 250, 24);
+}
