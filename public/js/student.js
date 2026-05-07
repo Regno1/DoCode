@@ -10,7 +10,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const socket = io("http://localhost:3000");
+  const teacherCode = document.getElementById("TeacherCode");
   let activeLanguage = "JavaScript";
+  let teacherCodeHidden = false;
+  let latestTeacherCode = "";
+  let toastTimer;
 
   document.getElementById("currentRoom").innerText = roomID;
 
@@ -31,7 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   socket.on("code-update", (data) => {
-    document.getElementById("TeacherCode").value = data.code;
+    latestTeacherCode = data.code;
+    teacherCode.value = teacherCodeHidden ? "" : latestTeacherCode;
   });
   socket.on("terminal-update" ,(data)=>{
     document.getElementById("TeacherTerminal").value= data.code;
@@ -41,14 +46,37 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("timerDisplay").innerText = data.timeLeft;
   });
 
+  socket.on("timer-started", () => {
+    showStudentToast("Timer started");
+  });
+
   socket.on("timer-stopped", () => {
-    
     document.getElementById("timerDisplay").innerText = "00:00";
+    showStudentToast("Timer stopped");
   });
 
   socket.on("language-updated", (lang) => {
     activeLanguage = lang;
     document.getElementById("activeLang").innerText = lang;
+  });
+
+  socket.on("code-visibility-updated", ({ hidden }) => {
+    teacherCodeHidden = hidden;
+    teacherCode.value = hidden ? "" : latestTeacherCode;
+    teacherCode.placeholder = hidden ? "Teacher code is hidden." : "Waiting for teacher to type...";
+  });
+
+  ["copy", "cut", "contextmenu"].forEach((eventName) => {
+    teacherCode.addEventListener(eventName, (event) => {
+      event.preventDefault();
+    });
+  });
+
+  teacherCode.addEventListener("keydown", (event) => {
+    const isCopyShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c";
+    if (isCopyShortcut) {
+      event.preventDefault();
+    }
   });
 
   const userMsg = document.getElementById("userMsg");
@@ -67,7 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   socket.on("receive-message", (data) => {
-    appendMessage(data.sender, data.message);
+    const displayName = data.sender === "Host" ? "Host" : "Student";
+    appendMessage(displayName, data.message);
   });
 
   function appendMessage(sender, message) {
@@ -94,6 +123,43 @@ document.addEventListener("DOMContentLoaded", () => {
     terminal.scrollTop = terminal.scrollHeight;
   });
 
+  document.getElementById("downloadStudentCode").addEventListener("click", () => {
+    downloadCode(
+      document.getElementById("StudentEditor").value,
+      `student-code${getExtension(activeLanguage)}`
+    );
+  });
+
+  function getExtension(language) {
+    const extensions = {
+      JavaScript: ".js",
+      Python: ".py",
+      C: ".c",
+      "C++": ".cpp"
+    };
+    return extensions[language] || ".txt";
+  }
+
+  function downloadCode(code, filename) {
+    const blob = new Blob([code], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  function showStudentToast(message) {
+    const toast = document.getElementById("studentToast");
+    if (!toast) return;
+    clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.classList.add("show");
+    toastTimer = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 1800);
+  }
+
   let lastActivitySent = 0;
   const sendActivity = () => {
     const now = Date.now();
@@ -112,4 +178,3 @@ document.addEventListener("DOMContentLoaded", () => {
 function toggleChat() {
   document.getElementById("chatFloat").classList.toggle("minimized");
 }
-

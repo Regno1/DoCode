@@ -12,7 +12,10 @@ const userMsg = document.getElementById("userMsg");
 const chatBox = document.getElementById("chatBox");
 const studentList = document.getElementById("studentList");
 const copyToast = document.getElementById("copyToast");
+const downloadHostCode = document.getElementById("downloadHostCode");
+const toggleStudentCode = document.getElementById("toggleStudentCode");
 let copyToastTimer;
+let isStudentCodeHidden = false;
 
 displayRoomID.innerText = roomID;
 
@@ -81,6 +84,39 @@ document.getElementById("Language").addEventListener("change", (e) => {
   });
 });
 
+downloadHostCode.addEventListener("click", () => {
+  const language = document.getElementById("Language").value;
+  downloadCode(hostEditor.value, `host-code${getExtension(language)}`);
+});
+
+toggleStudentCode.addEventListener("click", () => {
+  isStudentCodeHidden = !isStudentCodeHidden;
+  toggleStudentCode.textContent = isStudentCodeHidden ? "Unhide" : "Hide";
+  socket.emit("code-visibility-change", {
+    roomID,
+    hidden: isStudentCodeHidden
+  });
+});
+
+function getExtension(language) {
+  const extensions = {
+    JavaScript: ".js",
+    Python: ".py",
+    C: ".c",
+    "C++": ".cpp"
+  };
+  return extensions[language] || ".txt";
+}
+
+function downloadCode(code, filename) {
+  const blob = new Blob([code], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 let timerInterval;
 
 function startTimer() {
@@ -89,6 +125,7 @@ function startTimer() {
     parseInt(document.getElementById("Timer").value) * 60;
 
   clearInterval(timerInterval);
+  socket.emit("timer-started", { roomID });
 
   timerInterval = setInterval(() => {
 
@@ -172,16 +209,18 @@ document.querySelector(".run button").addEventListener("click", () => {
 });
 
 socket.on("code-result", (output) => {
-
-  hostTerminal.value += `\n> ${output}\n`;
-
-  hostTerminal.scrollTop = hostTerminal.scrollHeight;
+  appendTerminalOutput(`> ${output}`);
 });
 
 socket.on("student-code-result", ({ userName, output }) => {
-  hostTerminal.value += `\n${userName || "Student"} > ${output}\n`;
-  hostTerminal.scrollTop = hostTerminal.scrollHeight;
+  appendTerminalOutput(`${userName || "Student"} > ${output}`);
 });
+
+function appendTerminalOutput(text) {
+  const prefix = hostTerminal.value.trim() ? "\n" : "";
+  hostTerminal.value += `${prefix}${text}\n`;
+  hostTerminal.scrollTop = hostTerminal.scrollHeight;
+}
 
 socket.on("user-status", ({ socketId, status }) => {
   const student = document.getElementById(socketId);

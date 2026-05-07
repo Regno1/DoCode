@@ -123,6 +123,46 @@ textarea {
     
 }
 
+.nav-action {
+    height: 30px;
+    min-width: 88px;
+    padding: 0 10px;
+    background: #21262d;
+    color: #fff;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.nav-action:hover {
+    background: #30363d;
+}
+
+.student-toast {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    background: #238636;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1000;
+}
+
+.student-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .online-dot {
     width: 10px;
     height: 10px;

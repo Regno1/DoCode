@@ -104,6 +104,10 @@ io.on("connection", (socket) => {
         socket.to(roomID).emit("timer-update", { timeLeft });
     });
 
+    socket.on("timer-started", ({ roomID }) => {
+        socket.to(roomID).emit("timer-started");
+    });
+
     socket.on("timer-stopped", ({ roomID }) => {
         socket.to(roomID).emit("timer-stopped");
     });
@@ -114,6 +118,10 @@ io.on("connection", (socket) => {
 
     socket.on("language-change", ({ roomID, lang }) => {
         socket.to(roomID).emit("language-updated", lang);
+    });
+
+    socket.on("code-visibility-change", ({ roomID, hidden }) => {
+        socket.to(roomID).emit("code-visibility-updated", { hidden });
     });
 
     socket.on("disconnect", () => {
@@ -143,7 +151,7 @@ setInterval(() => {
     for (let socketId in users) {
         const lastActive = userActivity[socketId] || now;
         const diff = (now - lastActive) / 1000;
-        let status = diff > 300 ? "red" : (diff > 180 ? "yellow" : "green");
+        let status = diff >= 300 ? "red" : (diff >= 180 ? "yellow" : "green");
         io.to(users[socketId].roomID).emit("user-status", { socketId, status });
     }
 }, 5000);
