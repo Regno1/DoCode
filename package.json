@@ -1,0 +1,28 @@
+{
+  "name": "docode",
+  "version": "1.0.0",
+  "description": "A real-time practical coding classroom for live teaching and student practice.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/regno001/DoCode.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/regno001/DoCode/issues"
+  },
+  "homepage": "https://github.com/regno001/DoCode#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
